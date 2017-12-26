@@ -1,11 +1,15 @@
 from flask import Flask, render_template, url_for
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from database_setup import Base, Organ, Medicine
+
 app = Flask(__name__)
 
 ##############################################################
 # This is only for iterative step #3 Templates and Forms
 
 # Adding Fake database using dictionary#################################
-
+'''
 # Fake Restaurants
 organSystem = {'name': 'Digestive', 'id': '1'}
 
@@ -24,18 +28,27 @@ items = [{'name': 'Cheese Pizza', 'description': 'made with fresh cheese', 'pric
 
 item = {'name': 'Cheese Pizza', 'description': 'made with fresh cheese',
         'price': '$5.99', 'course': 'Entree'}
-
+'''
 
 ###########################################################################
+# Add our Database
 
 
+engine = create_engine('sqlite:///roadmaptohealth.db')
+Base.metadata.bind = engine
+
+DBSession = sessionmaker(bind=engine)
+session = DBSession()
+
+#########################################################################
 # Show all Organ Systems
 
 
 @app.route('/')
 @app.route('/RoadMapToHealth/')
-def showOgranSystems():
-    return render_template('organSystems.html', organSystems=organSystems)
+def showOrganSystems():
+    organ = session.query(Organ).all()
+    return render_template('organSystems.html', organ=organ)
     # restaurants = session.query(Restaurant).order_by(asc(Restaurant.name))
     # return "all organ systems are now visible"
 
