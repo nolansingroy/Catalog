@@ -104,81 +104,72 @@ def deleteOrganSystem(organ_id):  # OrganSystem_id
 # Show a organ menu
 
 
-@app.route('/RoadMapToHealth/organSystem_id/')
-@app.route('/RoadMapToHealth/organSystem_id/medicine/')
-def showMedicine():  # organSystem_id
-    return render_template('medicine.html', items=items, organSystem=organSystem)
+@app.route('/RoadMapToHealth/<int:organ_id>/')
+@app.route('/RoadMapToHealth/<int:organ_id>/medicine/')
+def showMedicine(organ_id):  # organSystem_id
+    # return render_template('medicine.html', items=items, organSystem=organSystem)
+    organ = session.query(Organ).filter_by(id=organ_id).one()
+    items = session.query(Medicine).filter_by(organ_id=organ_id).all()
+    return render_template('medicine.html', items=items, organ=organ)
 
-    '''organ = session.query(organ).filter_by(id=organ_id).one()
-       items = session.query(MenuItem).filter_by(
-            organ_id=organ_id).all()
-       return render_template('medicine.html', items=items, organ=organ)
-    '''
 
 # Create a new menu item
 
 
-@app.route('/RoadMapToHealth/organSystem_id/medicine/new/')  # , methods=['GET', 'POST']
-def newMedicine():  # organSystem_id
-    return render_template('newMedicine.html')
-
-    '''organ = session.query(organ).filter_by(id=organ_id).one()
+@app.route('/RoadMapToHealth/<int:organ_id>/medicine/new/', methods=['GET', 'POST'])
+def newMedicine(organ_id):
+    # return render_template('newMedicine.html')
+    organ = session.query(Organ).filter_by(id=organ_id).one()
     if request.method == 'POST':
-        newItem = MenuItem(name=request.form['name'], description=request.form[
-                           'description'], price=request.form['price'], course=request.form['course'], organ_id=organ_id)
+        newItem = Medicine(name=request.form['name'], description=request.form[
+                           'description'], type=request.form['type'], gland=request.form['gland'], organ_id=organ_id, organ=organ)
         session.add(newItem)
         session.commit()
-        flash('New Menu %s Item Successfully Created' % (newItem.name))
-        return redirect(url_for('showMenu', organ_id=organ_id))
+        #flash('New Menu %s Item Successfully Created' % (newItem.name))
+        return redirect(url_for('showMedicine', organ_id=organ_id))
     else:
-        return render_template('newmenuitem.html', organ_id=organ_id)
-'''
+        return render_template('newMedicine.html', organ_id=organ_id)
+
 
 # Edit a menu item
 
-
-# , methods=['GET', 'POST']
-@app.route('/RoadMapToHealth/organSystem_id/medicine/medicine_id/edit')
-def editMedicine():  # organSystem_id,medicine_id
-    return render_template('editMedicine.html', item=item)
-
-
-'''
-    editedItem = session.query(MenuItem).filter_by(id=menu_id).one()
-    organ = session.query(organ).filter_by(id=organ_id).one()
+@app.route('/RoadMapToHealth/<int:organ_id>/medicine/<int:medicine_id>/edit', methods=['GET', 'POST'])
+def editMedicine(organ_id, medicine_id):  # organSystem_id,medicine_id
+    # return render_template('editMedicine.html', item=item)
+    editedItem = session.query(Medicine).filter_by(id=medicine_id).one()
+    organ = session.query(Organ).filter_by(id=organ_id).one()
     if request.method == 'POST':
         if request.form['name']:
             editedItem.name = request.form['name']
         if request.form['description']:
             editedItem.description = request.form['description']
-        if request.form['price']:
-            editedItem.price = request.form['price']
-        if request.form['course']:
-            editedItem.course = request.form['course']
+        if request.form['gland']:
+            editedItem.price = request.form['gland']
+        if request.form['type']:
+            editedItem.course = request.form['type']
         session.add(editedItem)
         session.commit()
-        flash('Menu Item Successfully Edited')
+        #flash('Menu Item Successfully Edited')
         return redirect(url_for('showMedicine', organ_id=organ_id))
     else:
-        return render_template('editmedicine.html', organ_id=organ_id, menu_id=menu_id, item=editedItem)
-'''
+        return render_template('editMedicine.html', organ_id=organ_id, medicine_id=medicine_id, item=editedItem)
+
 
 # Delete a menu item
 
 
-# , methods=['GET', 'POST']
-@app.route('/RoadMapToHealth/organSystem_id/medicine/medicine_id/delete')
-def deleteMedicine():  # organSystem_id,medicine_id
-    return render_template('deleteMedicine.html', item=item)
-    #    organ = session.query(organ).filter_by(id=organ_id).one()
-    #    itemToDelete = session.query(MenuItem).filter_by(id=menu_id).one()
-    #    if request.method == 'POST':
-    #        session.delete(itemToDelete)
-    #        session.commit()
+@app.route('/RoadMapToHealth/<int:organ_id>/medicine/<int:medicine_id>/delete', methods=['GET', 'POST'])
+def deleteMedicine(organ_id, medicine_id):  # organSystem_id,medicine_id
+    # return render_template('deleteMedicine.html', item=item)
+    organ = session.query(Organ).filter_by(id=organ_id).one()
+    itemToDelete = session.query(Medicine).filter_by(id=medicine_id).one()
+    if request.method == 'POST':
+        session.delete(itemToDelete)
+        session.commit()
     #        flash('Menu Item Successfully Deleted')
-    #        return redirect(url_for('showMenu', organ_id=organ_id))
-    #    else:
-    #        return render_template('deleteMenuItem.html', item=itemToDelete)
+        return redirect(url_for('showMedicine', organ_id=organ_id))
+    else:
+        return render_template('deleteMedicine.html', item=itemToDelete, organ_id=organ_id)
 
 
 if __name__ == '__main__':
