@@ -23,7 +23,7 @@
           <div id="signinButton">
           <span class="g-signin"
             data-scope="openid email"
-            data-clientid="735465122280-sssvordmai2fpvnkkri35tka1ikq63ma.apps.googleusercontent.com"
+            data-clientid="735465122280-p500a2ao8cgto55nvlsrnsqn3a77ei7b.apps.googleusercontent.com"
             data-redirecturi="postmessage"
             data-accesstype="offline"
             data-cookiepolicy="single_host_origin"
@@ -49,7 +49,7 @@ function signInCallback(authResult) {
             if(result) {
                 $('#result').html('login successful!</br>' + result + '</br> redirecting in 100')
             setTimeout(function() {
-             window.location.href = "/restaurant";
+             window.location.href = "/RoadMapToHealth";
             }, 100);
         } else if (authResult['error']) {
         console.log('there was an errror: '+ authResult['error']);
