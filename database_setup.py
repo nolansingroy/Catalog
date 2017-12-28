@@ -36,6 +36,8 @@ class Medicine(Base):
     gland = Column(String(250))
     organ_id = Column(Integer, ForeignKey('organ.id'))
     organ = relationship(Organ)
+    time_created = Column(DateTime(timezone=True), server_default=func.now())
+    time_updated = Column(DateTime(timezone=True), onupdate=func.now())
 
     @property
     def serialize(self):

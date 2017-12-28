@@ -1,4 +1,4 @@
-from flask import Flask, render_template, url_for, redirect, request
+from flask import Flask, render_template, url_for, redirect, request, jsonify
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from database_setup import Base, Organ, Medicine
@@ -39,6 +39,31 @@ Base.metadata.bind = engine
 
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
+#########################################################################
+# JSON API's
+
+#/RoadMapToHealth/JSON
+
+
+@app.route('/RoadMapToHealth/JSON')
+def organSystemsJSON():
+    organSystems = session.query(Organ).all()
+    return jsonify(organSystems=[o.serialize for o in organSystems])
+
+
+#/RoadMapToHealth/organ_id/medicine/JSON
+@app.route('/RoadMapToHealth/<int:organ_id>/medicine/JSON')
+def organSystemsMedicineJSON(organ_id):
+    organSystems = session.query(Organ).filter_by(id=organ_id).one()
+    items = session.query(Medicine).filter_by(organ_id=organ_id).all()
+    return jsonify(MedicineItems=[i.serialize for i in items])
+
+
+#/RoadMapToHealth/organ_id/medicine/medicine_id/JSON
+@app.route('/RoadMapToHealth/<int:organ_id>/medicine/<int:medicine_id>/JSON')
+def medicineItemJSON(organ_id, medicine_id):
+    Medicine_Item = session.query(Medicine).filter_by(id=medicine_id).one()
+    return jsonify(Medicine_Item=Medicine_Item.serialize)
 
 #########################################################################
 # Show all Organ Systems
@@ -51,7 +76,6 @@ def showOrganSystems():
     return render_template('organSystems.html', organ=organ)
     # organs = session.query(organ).order_by(asc(organ.name))
     # return "all organ systems are now visible"
-
 # Create a new organ
 
 
