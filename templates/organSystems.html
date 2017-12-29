@@ -40,6 +40,51 @@
 		</div>
 		<div class="col-md-1"></div>
 	</div>
+<div class="row">
+	<div class="col-md-3">
+            <div class="row">
+                <div class="col-md-6"><p class="lead">Categories</p></div>
+                <div class="col-md-6 text-right"><a href="{{url_for('newOrganSystem')}}">
+                    <button  class="btn btn-success btn-outline" role="button">Add Category</button>
+                </a></div>
+             </br>
+		        </div>
+            <div class="list-group">
+                {% for i in organ %}
+<!--
+										<a href="{{url_for('showOrganSystems', organ=organ)}}" class="list-group-item">{{i.name}}
+										</a>
+-->
+										<a href="{{url_for('showMedicineItem', organ_id=i.id ,items=items)}}" class="list-group-item">{{i.name}}</a>
+                {% endfor %}
+            </div>
+  </div>
+	<div class="col-md-9">
+      <div class="jumbotron">
+          <div class="row">
+           <h1>Latest Items</h1>
+					</div>
+					{% for i in items %}
+					<div class="row is-flex">
+											 <div class="col-sm-4 col-lg-4 col-md-4">
+													 <div class="thumbnail">
+															 <h4 class="text-center">{{i.name}}</h4>
+															 <div class="text-center">
+								                                <p><a class="btn btn-default"  href="{{url_for('showSpecificMedicine', organ_name=i.organ.name, medicine_name=i.name)}}" role="button">View details &raquo;</a></p>
+								               </div>
+															 					<!-- TODO Trigger the modal with a button -->
+													</div>
+
+											 </div>
+          </div>
+					{% endfor %}
+
+			</div>
+	</div>
+
+</div>
+
+<!--
 	{% for i in organ %}
 			<div class="row">
 				<div class="col-md-1"></div>
@@ -53,3 +98,4 @@
 
 	{% endfor %}
 {% endblock %}
+-->

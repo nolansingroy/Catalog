@@ -1,5 +1,5 @@
 from flask import Flask, render_template, url_for, redirect, request, jsonify, flash
-from sqlalchemy import create_engine, asc
+from sqlalchemy import create_engine, asc, desc
 from sqlalchemy.orm import sessionmaker
 from database_setup import Base, Organ, Medicine
 # IMPORTS FOR GOOGLE credentials
@@ -183,6 +183,16 @@ def organSystemsMedicineJSON(organ_id):
 def medicineItemJSON(organ_id, medicine_id):
     Medicine_Item = session.query(Medicine).filter_by(id=medicine_id).one()
     return jsonify(Medicine_Item=Medicine_Item.serialize)
+################################################################################
+
+
+# Show information of a specific item
+@app.route('/RoadMapToHealth/<organ_name>/<medicine_name>')
+def showSpecificMedicine(organ_name, medicine_name):
+    organ = session.query(Organ).filter_by(name=organ_name).one()
+    item = session.query(Medicine).filter_by(name=medicine_name, organ=organ).one()
+    return render_template('showSpecificMedicine.html', item=item)
+
 
 #########################################################################
 # Show all Organ Systems
@@ -191,8 +201,9 @@ def medicineItemJSON(organ_id, medicine_id):
 @app.route('/')
 @app.route('/RoadMapToHealth/')
 def showOrganSystems():
-    organ = session.query(Organ).all()
-    return render_template('organSystems.html', organ=organ)
+    organ = session.query(Organ).order_by(asc(Organ.name))
+    items = session.query(Medicine).order_by(desc(Medicine.time_created))
+    return render_template('organSystems.html', organ=organ, items=items)
     # organs = session.query(organ).order_by(asc(organ.name))
     # return "all organ systems are now visible"
 # Create a new organ
@@ -206,7 +217,7 @@ def newOrganSystem():
     if request.method == 'POST':
         newOrgan = Organ(name=request.form['name'])
         session.add(newOrgan)
-        flash('New organ %s Successfully Created' % neworgan.name)
+        flash('New organ %s Successfully Created' % newOrgan.name)
         session.commit()
         return redirect(url_for('showOrganSystems'))
     else:
@@ -262,6 +273,15 @@ def showMedicine(organ_id):  # organSystem_id
     return render_template('medicine.html', items=items, organ=organ)
 
 
+# Show all items in a category
+@app.route('/RoadMapToHealth/<int:organ_id>/medicine/')
+def showMedicineItem(organ_id):
+    organ = session.query(Organ).order_by(asc(Organ.name))
+    selected_Medicine = session.query(Organ).filter_by(organ_id=organ_id).one()
+    items = session.query(Medicine).filter_by(
+        organ_id=selected_Medicine.id).order_by(asc(Medicine.name))
+    return render_template('medicine.html', organ=organ, selected_Medicine=selected_Medicine, items=items)
+
 # Create a new menu item
 
 
@@ -299,9 +319,9 @@ def editMedicine(organ_id, medicine_id):  # organSystem_id,medicine_id
         if request.form['description']:
             editedItem.description = request.form['description']
         if request.form['gland']:
-            editedItem.price = request.form['gland']
+            editedItem.gland = request.form['gland']
         if request.form['type']:
-            editedItem.course = request.form['type']
+            editedItem.type = request.form['type']
         session.add(editedItem)
         session.commit()
         flash('Medicine %s Successfully Edited' % (editedItem.name))

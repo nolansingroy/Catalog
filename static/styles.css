@@ -161,3 +161,11 @@ u }
 	text-align: center;
 
 }
+.thumbnail {
+	display: block;
+	padding: 4px;
+
+}
+.row .is-flex{
+	flex-wrap: wrap;
+}
