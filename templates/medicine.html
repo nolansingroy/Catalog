@@ -4,13 +4,16 @@
 	<div class="row divider green">
 		<div class="col-md-12"></div>
 	</div>
+	<hr>
 	<div class="row banner menu">
 		<div class="col-md-11 col-md-offset-1 padding-none">
 			<h1>{{ organ.name }}
+<!--Todo add in organ protection for ant-user modification
 			<figure class="creator">
 				<img src="{{ url_for('static', filename='blank_user.gif') }}">
-				<figcaption>Menu creator's name goes here</figcaption>
+				<figcaption>Menu creator</figcaption>
 			</figure>
+-->
 			</h1>
 
 		</div>
@@ -39,7 +42,7 @@
 			</a>
 			<a href="{{url_for('newMedicine',organ_id=organ.id)}}">
 				<button class="btn btn-default" id="new-menu-item">
-					<span class="glyphicon glyphicon-glass" aria-hidden="true"></span>Add Medicine
+					<span class="glyphicon glyphicon-plus-sign" aria-hidden="true"></span>Add Medicine
 				</button>
 			</a>
 			<a href="{{url_for('deleteOrganSystem', organ_id = organ.id )}}">

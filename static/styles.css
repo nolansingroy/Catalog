@@ -53,12 +53,25 @@ h3 {
 .padding-none {
 	padding: 0;
 }
+.user-txt{
+	vertical-align: bottom;
+  padding-top: 15px;
+	color:#999;
+	padding-top: 15px;
+}
+
+.btn-main {
+	border-color: #9FB80A;
+  color: #9FB80A;
+  padding: 5px;
+  border-width: 1px;
+}
 .btn {
 	padding: 20px;
 	margin: 0;
 	border-color: #9FB80A;
 	border-width: 2px;
-	color: #9FB80A;;
+	color: #9FB80A;
 }
 .btn:hover {
 	border-color: #9FB80A;
@@ -97,17 +110,18 @@ h3 {
 }
 .divider.green {
 	background-color: #9FB80A;
+  padding-top: 50px;
 }
 .banner.main {
 	height: 150px;
-	background: url("/static/top-banner.jpg");
+	background: url("/static/dna-topBanner.jpg");
 	background-position: right;
 	background-repeat: no-repeat;
 	background-size: cover;
 }
 .banner.menu {
 	height: 150px;
-	background-color: #E1E17F;
+	background: url("/static/dna-topBanner.jpg");
 }
 .banner.profile {
 	height: 150px;

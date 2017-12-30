@@ -1,7 +1,7 @@
 from flask import Flask, render_template, url_for, redirect, request, jsonify, flash
 from sqlalchemy import create_engine, asc, desc
 from sqlalchemy.orm import sessionmaker
-from database_setup import Base, Organ, Medicine
+from database_setup import Base, Organ, Medicine, User
 # IMPORTS FOR GOOGLE credentials
 from flask import session as login_session
 import random
@@ -24,7 +24,7 @@ APPLICATION_NAME = "RoadMapToHealth"
 # Add our Database
 
 
-engine = create_engine('sqlite:///roadmaptohealth.db')
+engine = create_engine('sqlite:///roadmaptohealthwithusers.db')
 Base.metadata.bind = engine
 
 DBSession = sessionmaker(bind=engine)
@@ -115,6 +115,12 @@ def gconnect():
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
 
+# see if user exists, if not then make new user
+    user_id = getUserId(login_session['email'])
+    if not user_id:
+        user_id = createUser(login_session)
+    login_session['user_id'] = user_id
+
     output = ''
     output += '<h1>Welcome, '
     output += login_session['username']
@@ -204,8 +210,6 @@ def showOrganSystems():
     organ = session.query(Organ).order_by(asc(Organ.name))
     items = session.query(Medicine).order_by(desc(Medicine.time_created))
     return render_template('organSystems.html', organ=organ, items=items)
-    # organs = session.query(organ).order_by(asc(organ.name))
-    # return "all organ systems are now visible"
 # Create a new organ
 
 
@@ -215,7 +219,8 @@ def newOrganSystem():
     if 'username' not in login_session:
         return redirect('/login')
     if request.method == 'POST':
-        newOrgan = Organ(name=request.form['name'])
+        newOrgan = Organ(name=request.form['name'],
+                         user_id=login_session['user_id'])
         session.add(newOrgan)
         flash('New organ %s Successfully Created' % newOrgan.name)
         session.commit()
@@ -226,8 +231,7 @@ def newOrganSystem():
 
 
 @app.route('/RoadMapToHealth/<int:organ_id>/edit/', methods=['GET', 'POST'])
-def editOrganSystem(organ_id):  # organSystem_id
-    # return render_template('editOrgan.html', organSystem=organSystem)
+def editOrganSystem(organ_id):
     # page protection
     if 'username' not in login_session:
         return redirect('/login')
@@ -246,8 +250,7 @@ def editOrganSystem(organ_id):  # organSystem_id
 
 
 @app.route('/RoadMapToHealth/<int:organ_id>/delete/', methods=['GET', 'POST'])
-def deleteOrganSystem(organ_id):  # OrganSystem_id
-    # return render_template('deleteOrgan.html', organSystem=organSystem)
+def deleteOrganSystem(organ_id):
     # protecting the page
     if 'username' not in login_session:
         return redirect('/login')
@@ -266,21 +269,43 @@ def deleteOrganSystem(organ_id):  # OrganSystem_id
 
 @app.route('/RoadMapToHealth/<int:organ_id>/')
 @app.route('/RoadMapToHealth/<int:organ_id>/medicine/')
-def showMedicine(organ_id):  # organSystem_id
-    # return render_template('medicine.html', items=items, organSystem=organSystem)
+def showMedicine(organ_id):
     organ = session.query(Organ).filter_by(id=organ_id).one()
     items = session.query(Medicine).filter_by(organ_id=organ_id).all()
     return render_template('medicine.html', items=items, organ=organ)
 
+##############################################################################
+# Header Render Template Routes
 
-# Show all items in a category
-@app.route('/RoadMapToHealth/<int:organ_id>/medicine/')
-def showMedicineItem(organ_id):
-    organ = session.query(Organ).order_by(asc(Organ.name))
-    selected_Medicine = session.query(Organ).filter_by(organ_id=organ_id).one()
-    items = session.query(Medicine).filter_by(
-        organ_id=selected_Medicine.id).order_by(asc(Medicine.name))
-    return render_template('medicine.html', organ=organ, selected_Medicine=selected_Medicine, items=items)
+
+@app.route('/RoadMapToHealth/Ayurvedic')
+def ayurvedic():
+    return render_template('ayurvedic.html')
+
+
+@app.route('/RoadMapToHealth/Peptide')
+def peptide():
+    return render_template('peptide.html')
+
+
+@app.route('/RoadMapToHealth/Supplement')
+def supplement():
+    return render_template('supplement.html')
+
+
+@app.route('/RoadMapToHealth/Hormone')
+def hormone():
+    return render_template('hormone.html')
+
+
+@app.route('/RoadMapToHealth/TCM')
+def tcm():
+    return render_template('tcm.html')
+
+
+@app.route('/RoadMapToHealth/Contact')
+def contact():
+    return render_template('contact.html')
 
 # Create a new menu item
 
@@ -294,7 +319,7 @@ def newMedicine(organ_id):
     organ = session.query(Organ).filter_by(id=organ_id).one()
     if request.method == 'POST':
         newItem = Medicine(name=request.form['name'], description=request.form[
-                           'description'], type=request.form['type'], gland=request.form['gland'], organ_id=organ_id, organ=organ)
+                           'description'], type=request.form['type'], gland=request.form['gland'], organ_id=organ_id, organ=organ, user_id=organ.user_id)
         session.add(newItem)
         session.commit()
         flash('New Medicine %s Successfully Created' % (newItem.name))
@@ -348,6 +373,28 @@ def deleteMedicine(organ_id, medicine_id):  # organSystem_id,medicine_id
         return redirect(url_for('showMedicine', organ_id=organ_id))
     else:
         return render_template('deleteMedicine.html', item=itemToDelete, organ_id=organ_id)
+
+
+def getUserId(email):
+    try:
+        user = session.query(User).filter_by(email=email).one()
+        return user.id
+    except:
+        return None
+
+
+def getUserInfo(user_id):
+    user = session.query(User).filter_by(id=user_id).one()
+    return user
+
+
+def createUser(login_session):
+    newUser = User(name=login_session['username'],
+                   email=login_session['email'], picture=login_session['picture'])
+    session.add(newUser)
+    session.commit()
+    user = session.query(User).filter_by(email=login_session['email']).one()
+    return user.id
 
 
 if __name__ == '__main__':

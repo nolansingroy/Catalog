@@ -7,6 +7,15 @@ from sqlalchemy import create_engine
 Base = declarative_base()
 
 
+class User(Base):
+    __tablename__ = 'user'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(80), nullable=False)
+    email = Column(String(250), nullable=False)
+    picture = Column(String(250))
+
+
 class Organ(Base):
     __tablename__ = 'organ'
 
@@ -14,6 +23,8 @@ class Organ(Base):
     name = Column(String(250), nullable=False)
     time_created = Column(DateTime(timezone=True), server_default=func.now())
     time_updated = Column(DateTime(timezone=True), onupdate=func.now())
+    user_id = Column(Integer, ForeignKey('user.id'))
+    user = relationship(User)
 
     @property
     def serialize(self):
@@ -22,7 +33,8 @@ class Organ(Base):
             'name': self.name,
             'id': self.id,
             'time_created': self.time_created,
-            'time_updated': self.time_updated
+            'time_updated': self.time_updated,
+            'user_id': self.user_id
         }
 
 
@@ -38,6 +50,8 @@ class Medicine(Base):
     organ = relationship(Organ)
     time_created = Column(DateTime(timezone=True), server_default=func.now())
     time_updated = Column(DateTime(timezone=True), onupdate=func.now())
+    user_id = Column(Integer, ForeignKey('user.id'))
+    user = relationship(User)
 
     @property
     def serialize(self):
@@ -53,5 +67,5 @@ class Medicine(Base):
         }
 
 
-engine = create_engine('sqlite:///roadmaptohealth.db')
+engine = create_engine('sqlite:///roadmaptohealthwithusers.db')
 Base.metadata.create_all(engine)
