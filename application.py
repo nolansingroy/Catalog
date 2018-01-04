@@ -1,8 +1,12 @@
-from flask import Flask, render_template, url_for, redirect, request, jsonify, flash
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+from flask import Flask, render_template, url_for, redirect, request
 from sqlalchemy import create_engine, asc, desc
 from sqlalchemy.orm import sessionmaker
 from database_setup import Base, Organ, Medicine, User
+
 # IMPORTS FOR GOOGLE credentials
+
 from flask import session as login_session
 import random
 import string
@@ -10,52 +14,61 @@ from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
 import httplib2
 import json
-from flask import make_response
+from flask import make_response, flash, jsonify
 import requests
 
 app = Flask(__name__)
 
-CLIENT_ID = json.loads(
-    open('client_secret.json', 'r').read())['web']['client_id']
-APPLICATION_NAME = "RoadMapToHealth"
+CLIENT_ID = json.loads(open('client_secret.json', 'r').read())['web'
+                                                               ]['client_id']
+APPLICATION_NAME = 'RoadMapToHealth'
 
-
-###########################################################################
+#########################################################################
 # Add our Database
-
 
 engine = create_engine('sqlite:///roadmaptohealthwithusers.db')
 Base.metadata.bind = engine
 
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
+
+
 #########################################################################
 
 # Create anti-forgery state token
-
 
 @app.route('/login')
 def showLogin():
     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
                     for x in xrange(32))
     login_session['state'] = state
+
     # return "The current session state is %s" % login_session['state']
+
     return render_template('login.html', STATE=state)
 
 
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
+
     # Validate state token
+
     if request.args.get('state') != login_session['state']:
-        response = make_response(json.dumps('Invalid state parameter.'), 401)
+        response = make_response(json.dumps('Invalid state parameter.'
+                                            ), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
+
     # Obtain authorization code
+
     code = request.data
 
     try:
+
         # Upgrade the authorization code into a credentials object
-        oauth_flow = flow_from_clientsecrets('client_secret.json', scope='')
+
+        oauth_flow = flow_from_clientsecrets('client_secret.json',
+                                             scope='')
         oauth_flow.redirect_uri = 'postmessage'
         credentials = oauth_flow.step2_exchange(code)
     except FlowExchangeError:
@@ -65,18 +78,23 @@ def gconnect():
         return response
 
     # Check that the access token is valid.
+
     access_token = credentials.access_token
-    url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
-           % access_token)
+    url = \
+        'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s' \
+        % access_token
     h = httplib2.Http()
     result = json.loads(h.request(url, 'GET')[1])
+
     # If there was an error in the access token info, abort.
+
     if result.get('error') is not None:
         response = make_response(json.dumps(result.get('error')), 500)
         response.headers['Content-Type'] = 'application/json'
         return response
 
     # Verify that the access token is used for the intended user.
+
     gplus_id = credentials.id_token['sub']
     if result['user_id'] != gplus_id:
         response = make_response(
@@ -85,9 +103,11 @@ def gconnect():
         return response
 
     # Verify that the access token is valid for this app.
+
     if result['issued_to'] != CLIENT_ID:
-        response = make_response(
-            json.dumps("Token's client ID does not match app's."), 401)
+        response = \
+            make_response(json.dumps("Token's client ID does not match app's."
+                                     ), 401)
         print "Token's client ID does not match app's."
         response.headers['Content-Type'] = 'application/json'
         return response
@@ -95,17 +115,20 @@ def gconnect():
     stored_access_token = login_session.get('access_token')
     stored_gplus_id = login_session.get('gplus_id')
     if stored_access_token is not None and gplus_id == stored_gplus_id:
-        response = make_response(json.dumps('Current user is already connected.'),
-                                 200)
+        response = \
+            make_response(json.dumps('Current user is already connected.'
+                                     ), 200)
         response.headers['Content-Type'] = 'application/json'
         return response
 
     # Store the access token in the session for later use.
+
     login_session['access_token'] = credentials.access_token
     login_session['gplus_id'] = gplus_id
 
     # Get user info
-    userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
+
+    userinfo_url = 'https://www.googleapis.com/oauth2/v1/userinfo'
     params = {'access_token': credentials.access_token, 'alt': 'json'}
     answer = requests.get(userinfo_url, params=params)
 
@@ -116,6 +139,7 @@ def gconnect():
     login_session['email'] = data['email']
 
 # see if user exists, if not then make new user
+
     user_id = getUserId(login_session['email'])
     if not user_id:
         user_id = createUser(login_session)
@@ -127,9 +151,12 @@ def gconnect():
     output += '!</h1>'
     output += '<img src="'
     output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
-    flash("you are now logged in as %s" % login_session['username'])
-    print "done!"
+    output += """
+              " style = "width: 300px; height: 300px;border-radius: 150px;
+              -webkit-border-radius: 150px;-moz-border-radius: 150px;">
+              """
+    flash('you are now logged in as %s' % login_session['username'])
+    print 'done!'
     return output
 
 
@@ -138,13 +165,16 @@ def gdisconnect():
     access_token = login_session.get('access_token')
     if access_token is None:
         print 'Access Token is None'
-        response = make_response(json.dumps('Current user not connected.'), 401)
+        response = \
+            make_response(json.dumps('Current user not connected.'),
+                          401)
         response.headers['Content-Type'] = 'application/json'
         return response
     print 'In gdisconnect access token is %s', access_token
     print 'User name is: '
     print login_session['username']
-    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % login_session['access_token']
+    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' \
+        % login_session['access_token']
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
     print 'result is '
@@ -155,20 +185,23 @@ def gdisconnect():
         del login_session['username']
         del login_session['email']
         del login_session['picture']
-        response = make_response(json.dumps('Successfully disconnected.'), 200)
+        response = make_response(json.dumps('Successfully disconnected.'
+                                            ), 200)
         response.headers['Content-Type'] = 'application/json'
         return response
     else:
-        response = make_response(json.dumps('Failed to revoke token for given user.', 400))
+        response = make_response(
+            json.dumps(
+                'Failed to revoke token for given user.',
+                400))
         response.headers['Content-Type'] = 'application/json'
         return response
 
 
-#########################################################################
+#####################################################################
 # JSON API's
 
-#/RoadMapToHealth/JSON
-
+# /RoadMapToHealth/JSON
 
 @app.route('/RoadMapToHealth/JSON')
 def organSystemsJSON():
@@ -176,7 +209,8 @@ def organSystemsJSON():
     return jsonify(organSystems=[o.serialize for o in organSystems])
 
 
-#/RoadMapToHealth/organ_id/medicine/JSON
+# /RoadMapToHealth/organ_id/medicine/JSON
+
 @app.route('/RoadMapToHealth/<int:organ_id>/medicine/JSON')
 def organSystemsMedicineJSON(organ_id):
     organSystems = session.query(Organ).filter_by(id=organ_id).one()
@@ -184,38 +218,48 @@ def organSystemsMedicineJSON(organ_id):
     return jsonify(MedicineItems=[i.serialize for i in items])
 
 
-#/RoadMapToHealth/organ_id/medicine/medicine_id/JSON
-@app.route('/RoadMapToHealth/<int:organ_id>/medicine/<int:medicine_id>/JSON')
-def medicineItemJSON(organ_id, medicine_id):
-    Medicine_Item = session.query(Medicine).filter_by(id=medicine_id).one()
-    return jsonify(Medicine_Item=Medicine_Item.serialize)
-################################################################################
+# /RoadMapToHealth/organ_id/medicine/medicine_id/JSON
 
+@app.route('/RoadMapToHealth/<int:organ_id>/medicine/<int:medicine_id>/JSON'
+           )
+def medicineItemJSON(organ_id, medicine_id):
+    Medicine_Item = \
+        session.query(Medicine).filter_by(id=medicine_id).one()
+    return jsonify(Medicine_Item=Medicine_Item.serialize)
+
+
+######################################################################
 
 # Show information of a specific item
+
 @app.route('/RoadMapToHealth/<organ_name>/<medicine_name>')
 def showSpecificMedicine(organ_name, medicine_name):
     organ = session.query(Organ).filter_by(name=organ_name).one()
-    item = session.query(Medicine).filter_by(name=medicine_name, organ=organ).one()
+    item = session.query(Medicine).filter_by(name=medicine_name,
+                                             organ=organ).one()
     return render_template('showSpecificMedicine.html', item=item)
 
 
-#########################################################################
+#######################################################################
 # Show all Organ Systems
-
 
 @app.route('/')
 @app.route('/RoadMapToHealth/')
 def showOrganSystems():
     organ = session.query(Organ).order_by(asc(Organ.name))
-    items = session.query(Medicine).order_by(desc(Medicine.time_created))
-    return render_template('organSystems.html', organ=organ, items=items)
-# Create a new organ
+    items = \
+        session.query(Medicine).order_by(desc(Medicine.time_created))
+    return render_template('organSystems.html', organ=organ,
+                           items=items)
 
+
+# Create a new organ
 
 @app.route('/RoadMapToHealth/new/', methods=['GET', 'POST'])
 def newOrganSystem():
+
     # protecting the pages
+
     if 'username' not in login_session:
         return redirect('/login')
     if request.method == 'POST':
@@ -227,35 +271,40 @@ def newOrganSystem():
         return redirect(url_for('showOrganSystems'))
     else:
         return render_template('newOrgan.html')
+
+
 # Edit a organ
 
-
-@app.route('/RoadMapToHealth/<int:organ_id>/edit/', methods=['GET', 'POST'])
+@app.route('/RoadMapToHealth/<int:organ_id>/edit/', methods=['GET',
+                                                             'POST'])
 def editOrganSystem(organ_id):
+
     # page protection
+
     if 'username' not in login_session:
         return redirect('/login')
-    editedOrgan = session.query(
-        Organ).filter_by(id=organ_id).one()
+    editedOrgan = session.query(Organ).filter_by(id=organ_id).one()
     if request.method == 'POST':
         if request.form['name']:
             editedOrgan.name = request.form['name']
             flash('Organ %s successfully edited ' % editedOrgan.name)
             return redirect(url_for('showOrganSystems'))
     else:
-        return render_template('editOrgan.html', organ=editedOrgan, organ_id=organ_id)
+        return render_template('editOrgan.html', organ=editedOrgan,
+                               organ_id=organ_id)
 
 
 # Delete a organ
 
-
-@app.route('/RoadMapToHealth/<int:organ_id>/delete/', methods=['GET', 'POST'])
+@app.route('/RoadMapToHealth/<int:organ_id>/delete/', methods=['GET',
+                                                               'POST'])
 def deleteOrganSystem(organ_id):
+
     # protecting the page
+
     if 'username' not in login_session:
         return redirect('/login')
-    organToDelete = session.query(
-        Organ).filter_by(id=organ_id).one()
+    organToDelete = session.query(Organ).filter_by(id=organ_id).one()
     if request.method == 'POST':
         session.delete(organToDelete)
         flash('%s Successfully Deleted' % organToDelete.name)
@@ -264,8 +313,8 @@ def deleteOrganSystem(organ_id):
     else:
         return render_template('deleteOrgan.html', organ=organToDelete)
 
-# Show a organ menu
 
+# Show a organ menu
 
 @app.route('/RoadMapToHealth/<int:organ_id>/')
 @app.route('/RoadMapToHealth/<int:organ_id>/medicine/')
@@ -274,9 +323,9 @@ def showMedicine(organ_id):
     items = session.query(Medicine).filter_by(organ_id=organ_id).all()
     return render_template('medicine.html', items=items, organ=organ)
 
-##############################################################################
-# Header Render Template Routes
 
+#######################################################################
+# Header Render Template Routes
 
 @app.route('/RoadMapToHealth/Ayurvedic')
 def ayurvedic():
@@ -307,22 +356,32 @@ def tcm():
 def contact():
     return render_template('contact.html')
 
+
 # Create a new menu item
 
-
-@app.route('/RoadMapToHealth/<int:organ_id>/medicine/new/', methods=['GET', 'POST'])
+@app.route('/RoadMapToHealth/<int:organ_id>/medicine/new/',
+           methods=['GET', 'POST'])
 def newMedicine(organ_id):
+
     # return render_template('newMedicine.html')
     # Page Protection
+
     if 'username' not in login_session:
         return redirect('/login')
     organ = session.query(Organ).filter_by(id=organ_id).one()
     if request.method == 'POST':
-        newItem = Medicine(name=request.form['name'], description=request.form[
-                           'description'], type=request.form['type'], gland=request.form['gland'], organ_id=organ_id, organ=organ, user_id=organ.user_id)
+        newItem = Medicine(
+            name=request.form['name'],
+            description=request.form['description'],
+            type=request.form['type'],
+            gland=request.form['gland'],
+            organ_id=organ_id,
+            organ=organ
+            # user_id=organ.user_id,
+        )
         session.add(newItem)
         session.commit()
-        flash('New Medicine %s Successfully Created' % (newItem.name))
+        flash('New Medicine %s Successfully Created' % newItem.name)
         return redirect(url_for('showMedicine', organ_id=organ_id))
     else:
         return render_template('newMedicine.html', organ_id=organ_id)
@@ -330,10 +389,16 @@ def newMedicine(organ_id):
 
 # Edit a menu item
 
-@app.route('/RoadMapToHealth/<int:organ_id>/medicine/<int:medicine_id>/edit', methods=['GET', 'POST'])
-def editMedicine(organ_id, medicine_id):  # organSystem_id,medicine_id
+@app.route(
+    '/RoadMapToHealth/<int:organ_id>/medicine/<int:medicine_id>/edit',
+    methods=[
+        'GET',
+        'POST'])
+def editMedicine(organ_id, medicine_id):
+
     # return render_template('editMedicine.html', item=item)
     # Page Protection
+
     if 'username' not in login_session:
         return redirect('/login')
     editedItem = session.query(Medicine).filter_by(id=medicine_id).one()
@@ -349,37 +414,45 @@ def editMedicine(organ_id, medicine_id):  # organSystem_id,medicine_id
             editedItem.type = request.form['type']
         session.add(editedItem)
         session.commit()
-        flash('Medicine %s Successfully Edited' % (editedItem.name))
+        flash('Medicine %s Successfully Edited' % editedItem.name)
         return redirect(url_for('showMedicine', organ_id=organ_id))
     else:
-        return render_template('editMedicine.html', organ_id=organ_id, medicine_id=medicine_id, item=editedItem)
+        return render_template('editMedicine.html', organ_id=organ_id,
+                               medicine_id=medicine_id, item=editedItem)
 
 
 # Delete a menu item
 
+@app.route(
+    '/RoadMapToHealth/<int:organ_id>/medicine/<int:medicine_id>/delete',
+    methods=[
+        'GET',
+        'POST'])
+def deleteMedicine(organ_id, medicine_id):
 
-@app.route('/RoadMapToHealth/<int:organ_id>/medicine/<int:medicine_id>/delete', methods=['GET', 'POST'])
-def deleteMedicine(organ_id, medicine_id):  # organSystem_id,medicine_id
     # return render_template('deleteMedicine.html', item=item)
     # page Protection
+
     if 'username' not in login_session:
         return redirect('/login')
     organ = session.query(Organ).filter_by(id=organ_id).one()
-    itemToDelete = session.query(Medicine).filter_by(id=medicine_id).one()
+    itemToDelete = \
+        session.query(Medicine).filter_by(id=medicine_id).one()
     if request.method == 'POST':
         session.delete(itemToDelete)
         session.commit()
         flash('Medicine Successfully Deleted')
         return redirect(url_for('showMedicine', organ_id=organ_id))
     else:
-        return render_template('deleteMedicine.html', item=itemToDelete, organ_id=organ_id)
+        return render_template('deleteMedicine.html',
+                               item=itemToDelete, organ_id=organ_id)
 
 
 def getUserId(email):
     try:
         user = session.query(User).filter_by(email=email).one()
         return user.id
-    except:
+    except BaseException:
         return None
 
 
@@ -390,10 +463,12 @@ def getUserInfo(user_id):
 
 def createUser(login_session):
     newUser = User(name=login_session['username'],
-                   email=login_session['email'], picture=login_session['picture'])
+                   email=login_session['email'],
+                   picture=login_session['picture'])
     session.add(newUser)
     session.commit()
-    user = session.query(User).filter_by(email=login_session['email']).one()
+    user = session.query(User).filter_by(email=login_session['email'
+                                                             ]).one()
     return user.id
 
 
