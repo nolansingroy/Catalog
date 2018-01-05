@@ -25,6 +25,7 @@ class Organ(Base):
     time_updated = Column(DateTime(timezone=True), onupdate=func.now())
     user_id = Column(Integer, ForeignKey('user.id'))
     user = relationship(User)
+    medicine = relationship('Medicine', cascade='all, delete-orphan')
 
     @property
     def serialize(self):
