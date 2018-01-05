@@ -63,7 +63,8 @@ class Medicine(Base):
             'type': self.type,
             'gland': self.gland,
             'time_created': self.time_created,
-            'time_updated': self.time_updated
+            'time_updated': self.time_updated,
+            'user_id': self.user_id
         }
 
 

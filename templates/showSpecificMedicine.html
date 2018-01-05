@@ -1,6 +1,20 @@
 {% extends "main.html" %}
 {% block content %}
 {% include "header.html" %}
+<div class="row divider green">
+  <div class="col-md-12"></div>
+</div>
+<hr>
+<div class="row banner menu">
+  <div class="col-md-11 col-md-offset-1 padding-none">
+    <h1>{{ organ.name }}
+<!--Todo add in organ protection for ant-user modification-->
+
+    </h1>
+
+  </div>
+</div>
+
     <div class="jumbotron">
         <div class="row">
             <div class="col-md-3">
@@ -11,8 +25,6 @@
                 <p>{{item.description}}</p>
                 <p>{{item.gland}}</p>
                 <p>{{item.type}}</p>
-                <a href="{{url_for('editMedicine', organ_id=item.organ.id, medicine_id=item.id)}}">Edit |</a>
-      <a href="{{url_for('deleteMedicine', organ_id=item.organ.id, medicine_id=item.id)}}">Delete</a>
             </div>
         </div>
     </div>

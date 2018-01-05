@@ -232,16 +232,15 @@ def medicineItemJSON(organ_id, medicine_id):
 
 # Show information of a specific item
 
-@app.route('/RoadMapToHealth/<organ_name>/<medicine_name>')
+@app.route('/RoadMapToHealth/<path:organ_name>/<path:medicine_name>')
 def showSpecificMedicine(organ_name, medicine_name):
     organ = session.query(Organ).filter_by(name=organ_name).one()
     item = session.query(Medicine).filter_by(name=medicine_name,
                                              organ=organ).one()
-    return render_template('showSpecificMedicine.html', item=item)
-
-
+    return render_template('showSpecificMedicine.html', item=item, organ=organ)
 #######################################################################
 # Show all Organ Systems
+
 
 @app.route('/')
 @app.route('/RoadMapToHealth/')
@@ -249,8 +248,14 @@ def showOrganSystems():
     organ = session.query(Organ).order_by(asc(Organ.name))
     items = \
         session.query(Medicine).order_by(desc(Medicine.time_created))
-    return render_template('organSystems.html', organ=organ,
-                           items=items)
+    if 'username' not in login_session:
+        return render_template(
+            'publicOrganSystems.html',
+            organ=organ,
+            items=items)
+    else:
+        return render_template('organSystems.html', organ=organ,
+                               items=items)
 
 
 # Create a new organ
@@ -284,6 +289,10 @@ def editOrganSystem(organ_id):
     if 'username' not in login_session:
         return redirect('/login')
     editedOrgan = session.query(Organ).filter_by(id=organ_id).one()
+    if editedOrgan.user_id != login_session['user_id']:
+        return "<script>function myFunction() {alert('you are not authorized" \
+            "to edit this organ.Please create your own in order" \
+            "to edit.');}</script><body onload='myFunction()'>"
     if request.method == 'POST':
         if request.form['name']:
             editedOrgan.name = request.form['name']
@@ -305,6 +314,10 @@ def deleteOrganSystem(organ_id):
     if 'username' not in login_session:
         return redirect('/login')
     organToDelete = session.query(Organ).filter_by(id=organ_id).one()
+    if organToDelete.user_id != login_session['user_id']:
+        return "<script>function myFunction() {alert('you are not authorized" \
+            "to delete this organ.Please create your own in order"\
+            "to delete.');}</script><body onload='myFunction()'>"
     if request.method == 'POST':
         session.delete(organToDelete)
         flash('%s Successfully Deleted' % organToDelete.name)
@@ -321,7 +334,14 @@ def deleteOrganSystem(organ_id):
 def showMedicine(organ_id):
     organ = session.query(Organ).filter_by(id=organ_id).one()
     items = session.query(Medicine).filter_by(organ_id=organ_id).all()
-    return render_template('medicine.html', items=items, organ=organ)
+    creator = getUserInfo(organ.user_id)
+    if 'username' not in login_session \
+            or creator.id != login_session['user_id']:
+        return render_template('publicMedicine.html', items=items,
+                               organ=organ, creator=creator)
+    else:
+        return render_template('medicine.html', items=items,
+                               organ=organ, creator=creator)
 
 
 #######################################################################
@@ -363,7 +383,6 @@ def contact():
            methods=['GET', 'POST'])
 def newMedicine(organ_id):
 
-    # return render_template('newMedicine.html')
     # Page Protection
 
     if 'username' not in login_session:
@@ -376,8 +395,8 @@ def newMedicine(organ_id):
             type=request.form['type'],
             gland=request.form['gland'],
             organ_id=organ_id,
-            organ=organ
-            # user_id=organ.user_id,
+            organ=organ,
+            user_id=organ.user_id
         )
         session.add(newItem)
         session.commit()
@@ -396,13 +415,16 @@ def newMedicine(organ_id):
         'POST'])
 def editMedicine(organ_id, medicine_id):
 
-    # return render_template('editMedicine.html', item=item)
     # Page Protection
 
     if 'username' not in login_session:
         return redirect('/login')
     editedItem = session.query(Medicine).filter_by(id=medicine_id).one()
     organ = session.query(Organ).filter_by(id=organ_id).one()
+    if editedItem.user_id != login_session['user_id']:
+        return "<script>function myFunction() {alert('you are not authorized" \
+            "to edit this organ.Please create your own in order"\
+            "to edit.');}</script><body onload='myFunction()'>"
     if request.method == 'POST':
         if request.form['name']:
             editedItem.name = request.form['name']
@@ -430,7 +452,6 @@ def editMedicine(organ_id, medicine_id):
         'POST'])
 def deleteMedicine(organ_id, medicine_id):
 
-    # return render_template('deleteMedicine.html', item=item)
     # page Protection
 
     if 'username' not in login_session:
@@ -438,6 +459,10 @@ def deleteMedicine(organ_id, medicine_id):
     organ = session.query(Organ).filter_by(id=organ_id).one()
     itemToDelete = \
         session.query(Medicine).filter_by(id=medicine_id).one()
+    if itemToDelete.user_id != login_session['user_id']:
+        return "<script>function myFunction() {alert('you are not authorized" \
+            "to delete this organ.Please create your own in order"\
+            "to delete.');}</script><body onload='myFunction()'>'"
     if request.method == 'POST':
         session.delete(itemToDelete)
         session.commit()
