@@ -242,7 +242,7 @@ def showSpecificMedicine(organ_name, medicine_name):
 # Show all Organ Systems
 
 
-@app.route('/')
+#@app.route('/')
 @app.route('/RoadMapToHealth/')
 def showOrganSystems():
     organ = session.query(Organ).order_by(asc(Organ.name))
