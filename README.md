@@ -17,3 +17,9 @@ To allow the user to create read update and delete medicine products associated 
 
 ## ** Import Notice**
 This application Road Map To Health is part of the Full Stack Web Developer nano degree through Udacity. Credit goes to the instructors and there learning modules.
+
+
+# Documentation Guides
+1. flask.pocoo.org
+2. https://getbootstrap.com/docs/4.0/getting/introduction/
+
